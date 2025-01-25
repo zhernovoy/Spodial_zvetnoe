@@ -75,7 +75,7 @@ body {
 }
 
 .message.assistant {
-    background: var(--tg-theme-secondary-bg-color);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .message.user {
@@ -228,67 +228,78 @@ body {
 .product-card {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--tg-theme-hint-color);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     overflow: hidden;
     background: var(--tg-theme-bg-color);
+    height: 220px;
 }
 
 .product-card img {
     width: 100%;
-    aspect-ratio: 1;  /* Квадратная картинка */
+    height: 140px; /* Фиксированная высота для изображения */
     object-fit: cover;
+    flex-shrink: 0; /* Предотвращает сжатие изображения */
 }
 
 .product-card-content {
     padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     background: var(--tg-theme-bg-color);
+    height: 80px;
 }
 
 .product-card h4 {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--tg-theme-text-color);
     margin: 0;
-    line-height: 1.3;
+    line-height: 1.2;
+    height: 28px; /* Фиксированная высота для 2 строк текста */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .product-card .price {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--tg-theme-link-color);
+    margin: 0;
+    flex-shrink: 0; /* Предотвращает сжатие цены */
 }
 
 .buy-button {
     background: var(--tg-theme-button-color);
     color: var(--tg-theme-button-text-color);
     border: none;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.2s;
     width: 100%;
+    flex-shrink: 0;
 }
 
 .buy-button:active {
     opacity: 0.8;
 }
 
-.product-card {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--tg-theme-hint-color);
-    border-radius: 8px;
-    overflow: hidden;
-    background: var(--tg-theme-bg-color);
-}
+/* Добавляем стили для темной темы */
+@media (prefers-color-scheme: dark) {
+    .product-card {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
 
-.product-card .price {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--tg-theme-link-color);
+    .message.assistant {
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    #userInput {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
 } 
