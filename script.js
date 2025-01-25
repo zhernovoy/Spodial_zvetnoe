@@ -22,7 +22,13 @@ const config = {
     - Уровень сложности (начинающий/средний/опытный)
     - Тематику (природа/города/животные/etc)
     - Ценовой диапазон
-    - Размер картины`
+    - Размер картины
+    
+    Важно: 
+    1. Давайте только краткие ответы (1-2 предложения)
+    2. Не включайте ссылки и технические детали
+    3. Просто опишите, почему эти картины подойдут
+    4. Пусть карточки товаров говорят сами за себя`
 };
 
 // Add utility functions directly
@@ -65,7 +71,8 @@ class AIService {
                 messages: [
                     {
                         role: 'system',
-                        content: config.SYSTEM_PROMPT
+                        content: `${config.SYSTEM_PROMPT}
+                        Важно: Давайте короткие ответы (1-2 предложения) и позвольте товарам говорить за себя.`
                     },
                     ...messages
                 ],
@@ -327,21 +334,39 @@ class SimpleChat {
                 const productsDiv = document.createElement('div');
                 productsDiv.className = 'product-cards';
                 
-                relevantProducts.slice(0, 3).forEach(product => {
+                relevantProducts.slice(0, 4).forEach(product => {
                     const card = document.createElement('div');
                     card.className = 'product-card';
                     card.innerHTML = `
-                        ${product.picture ? `<img src="${product.picture}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/150'">` : ''}
-                        <h4>${product.name}</h4>
-                        <p class="price">${formatPrice(product.price)}</p>
-                        <p class="description">${product.description.slice(0, 100)}...</p>
-                        <a href="${product.url}" target="_blank" class="product-button">Подробнее</a>
+                        ${product.picture ? `<img src="${product.picture}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/200'">` : ''}
+                        <div class="product-card-content">
+                            <h4>${product.model || product.name.replace('Картина по номерам ', '')}</h4>
+                            <button class="buy-button">Купить за ${formatPrice(product.price)}</button>
+                        </div>
                     `;
+                    
+                    // Update click handler to handle both card and button clicks
+                    const buyButton = card.querySelector('.buy-button');
+                    buyButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent card click
+                        if (window.Telegram?.WebApp?.openTelegramLink) {
+                            window.Telegram.WebApp.openTelegramLink(product.url);
+                        } else {
+                            window.open(product.url, '_blank');
+                        }
+                    });
+                    
                     productsDiv.appendChild(card);
                 });
                 
                 div.appendChild(productsDiv);
             }
+
+            // After product cards, add the question
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'message-text';
+            questionDiv.innerHTML = '<br>Какой вариант вам больше нравится?';
+            div.appendChild(questionDiv);
         } else {
             div.textContent = text;
         }

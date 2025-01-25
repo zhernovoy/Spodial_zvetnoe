@@ -1,0 +1,10 @@
+{
+    "name": "ZvetnoeAIBot",
+    "short_name": "zvetnoe_ai",
+    "description": "AI консультант по картинам по номерам",
+    "bot_api_server": "https://api.telegram.org",
+    "main_button": {
+        "text": "Открыть каталог",
+        "color": "#2481cc"
+    }
+} 

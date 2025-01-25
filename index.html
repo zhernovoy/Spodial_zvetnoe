@@ -2,34 +2,37 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI Консультант Zvetnoe.ru</title>
     <link rel="stylesheet" href="./styles.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="brand-line">
-        <span class="powered-by">Zvetnoe.ru</span>
+        <span class="powered-by">Zvetnoe</span>
         <span class="ai-badge">AI</span>
     </div>
     <div class="chat-container">
         <div id="chatMessages">
             <div class="message assistant">
-                Здравствуйте! Я помогу подобрать идеальную картину по номерам. Расскажите, что вас интересует:
-                • Уровень сложности
-                • Тематика (природа, города, животные)
-                • Ценовой диапазон
+                Здравствуйте! Я помогу подобрать картину по номерам. Расскажите:
+                • Сложность
+                • Тематика
+                • Бюджет
             </div>
         </div>
         <div class="chat-controls">
-            <input type="text" id="userInput" placeholder="Опишите, какую картину хотите найти...">
-            <button id="sendMessage" class="btn-primary">Найти</button>
+            <input type="text" id="userInput" placeholder="Опишите желаемую картину...">
+            <button id="sendMessage" class="btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="./script.js"></script>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-<script src="./script.js"></script>
-</html> ç
+</html>
