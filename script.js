@@ -111,6 +111,22 @@ class ProductCatalog {
         this.priceRange = { min: Infinity, max: -Infinity };
     }
 
+    getElementText(element, tagName) {
+        const node = element.getElementsByTagName(tagName)[0];
+        return node ? node.textContent : '';
+    }
+
+    // Добавляем метод для получения тегов
+    getElementTags(element) {
+        const params = element.getElementsByTagName('param');
+        for (let param of params) {
+            if (param.getAttribute('name') === 'tags') {
+                return param.textContent.split(',').map(tag => tag.trim());
+            }
+        }
+        return [];
+    }
+
     async loadFromXML(url) {
         try {
             const response = await axios.get(url);
@@ -136,7 +152,8 @@ class ProductCatalog {
                         category: this.getElementText(offer, 'category') || 'Разное',
                         description: this.getElementText(offer, 'description'),
                         picture: this.getElementText(offer, 'picture'),
-                        url: this.getElementText(offer, 'url')
+                        url: this.getElementText(offer, 'url'),
+                        tags: this.getElementTags(offer) // Добавляем теги
                     };
                     
                     // Validate required fields
@@ -176,28 +193,23 @@ class ProductCatalog {
         }
     }
 
-    getElementText(element, tagName) {
-        const node = element.getElementsByTagName(tagName)[0];
-        return node ? node.textContent : '';
-    }
-
     searchProducts(query) {
         const searchTerms = query.toLowerCase().split(' ');
         const results = this.products.map(product => {
-            const searchText = `${product.name} ${product.description} ${product.category}`.toLowerCase();
+            const searchText = `${product.name} ${product.description} ${product.category} ${product.tags.join(' ')}`.toLowerCase();
             const matchScore = searchTerms.reduce((score, term) => {
                 if (searchText.includes(term)) {
                     score += 1;
-                    // Bonus points for matches in name or category
+                    // Бонусные очки за совпадения
                     if (product.name.toLowerCase().includes(term)) score += 2;
                     if (product.category.toLowerCase().includes(term)) score += 1;
+                    if (product.tags.some(tag => tag.toLowerCase().includes(term))) score += 2;
                 }
                 return score;
             }, 0);
             return { product, score: matchScore };
         });
 
-        // Sort by score and return only products with matches
         return results
             .filter(result => result.score > 0)
             .sort((a, b) => b.score - a.score)
@@ -221,6 +233,7 @@ class ProductCatalog {
 Название: ${p.name}
 Цена: ${formatPrice(p.price)}
 Категория: ${p.category}
+Теги: ${p.tags.join(', ')}
 Описание: ${p.description}
 URL: ${p.url}
 ---`).join('\n')}`;
@@ -351,12 +364,8 @@ class SimpleChat {
                     const buyButton = card.querySelector('.buy-button');
                     buyButton.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        // Используем Telegram WebApp для открытия ссылки
-                        if (window.Telegram?.WebApp) {
-                            window.Telegram.WebApp.openLink(product.url);
-                        } else {
-                            window.open(product.url, '_blank');
-                        }
+                        // Всегда открываем в новом окне
+                        window.open(product.url, '_blank');
                     });
                     
                     productsDiv.appendChild(card);
