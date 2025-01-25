@@ -377,9 +377,9 @@ class SimpleChat {
             this.button.disabled = true;
             this.context.push({ role: 'user', content: message });
             
-            // Передаем весь контекст диалога в поиск
-            const relevantProducts = this.catalog.searchProducts(message, this.context);
-            const productContext = this.catalog.generateProductPrompt(relevantProducts.slice(0, 4));
+            // Сохраняем найденные продукты в переменную класса
+            this.lastRelevantProducts = this.catalog.searchProducts(message, this.context).slice(0, 4);
+            const productContext = this.catalog.generateProductPrompt(this.lastRelevantProducts);
             
             this.context.push({
                 role: 'system',
@@ -387,7 +387,8 @@ class SimpleChat {
                 Учитывайте контекст диалога и особенности запроса пользователя.
                 Если это подарок - упомяните это в ответе.
                 Если указан возраст - учтите его при рекомендации.
-                Если есть опыт - подчеркните сложность картин.`
+                Если есть опыт - подчеркните сложность картин.
+                Важно: Рекомендуйте только из списка предоставленных товаров.`
             });
 
             const response = await this.aiService.generateResponse(this.context);
@@ -406,30 +407,17 @@ class SimpleChat {
         div.className = `message ${isUser ? 'user' : 'assistant'}`;
         
         if (!isUser) {
-            // First add the text response
             const textDiv = document.createElement('div');
             textDiv.className = 'message-text';
-            
-            // Convert markdown formatting
-            text = text.replace(/###\s(.*?)(?=\n|$)/g, '<h3>$1</h3>');
-            text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            text = text.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
-            text = text.replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>');
-            if (text.includes('<li>')) {
-                text = text.replace(/(<li>.*?<\/li>)\n*/g, '<ul>$1</ul>');
-            }
-            text = text.replace(/\n/g, '<br>');
-            
-            textDiv.innerHTML = text;
+            textDiv.innerHTML = this.formatText(text);
             div.appendChild(textDiv);
 
-            // Add product cards if there are relevant products
-            const relevantProducts = this.catalog.searchProducts(this.context[this.context.length - 2]?.content || '', this.context);
-            if (relevantProducts.length > 0) {
+            // Используем сохраненные продукты
+            if (this.lastRelevantProducts?.length > 0) {
                 const productsDiv = document.createElement('div');
                 productsDiv.className = 'product-cards';
                 
-                relevantProducts.slice(0, 4).forEach(product => {
+                this.lastRelevantProducts.forEach(product => {
                     const card = document.createElement('div');
                     card.className = 'product-card';
                     card.innerHTML = `
@@ -441,11 +429,9 @@ class SimpleChat {
                         </div>
                     `;
                     
-                    // Update click handler to handle both card and button clicks
                     const buyButton = card.querySelector('.buy-button');
                     buyButton.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        // Всегда открываем в новом окне
                         window.open(product.url, '_blank');
                     });
                     
@@ -455,7 +441,6 @@ class SimpleChat {
                 div.appendChild(productsDiv);
             }
 
-            // After product cards, add the question
             const questionDiv = document.createElement('div');
             questionDiv.className = 'message-text';
             questionDiv.innerHTML = '<br>Какой вариант вам больше нравится?';
@@ -466,6 +451,17 @@ class SimpleChat {
         
         this.messages.appendChild(div);
         this.messages.scrollTop = this.messages.scrollHeight;
+    }
+
+    // Добавляем вспомогательный метод для форматирования текста
+    formatText(text) {
+        return text
+            .replace(/###\s(.*?)(?=\n|$)/g, '<h3>$1</h3>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
+            .replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>')
+            .replace(/(<li>.*?<\/li>)\n*/g, text.includes('<li>') ? '<ul>$1</ul>' : '$1')
+            .replace(/\n/g, '<br>');
     }
 }
 
