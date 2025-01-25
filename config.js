@@ -22,7 +22,17 @@ const config = {
     - Тематику (природа/города/животные/etc)
     - Ценовой диапазон
     - Размер картины
-    `
+    `,
+    TELEGRAM_BOT_TOKEN: 'YOUR_BOT_TOKEN',
+    TELEGRAM_WEB_APP_NAME: 'zvetnoe_ai_bot'
 };
+
+// Initialize Telegram WebApp
+const tg = window.Telegram.WebApp;
+tg.expand(); // Expand to full height
+
+// Set theme
+document.body.style.backgroundColor = tg.backgroundColor;
+document.body.style.color = tg.textColor;
 
 export default config; 
