@@ -75,7 +75,7 @@ body {
 }
 
 .message.assistant {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .message.user {
@@ -228,10 +228,10 @@ body {
 .product-card {
     display: flex;
     flex-direction: column;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
     overflow: hidden;
-    background: var(--tg-theme-bg-color);
+    background: rgba(255, 255, 255, 0.05);
     height: 220px;
 }
 
@@ -247,16 +247,16 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: var(--tg-theme-bg-color);
+    background: rgba(255, 255, 255, 0.03);
     height: 80px;
 }
 
 .product-card h4 {
     font-size: 12px;
-    color: var(--tg-theme-text-color);
+    color: rgba(255, 255, 255, 0.95);
     margin: 0;
     line-height: 1.2;
-    height: 28px; /* Фиксированная высота для 2 строк текста */
+    height: 28px;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -267,8 +267,9 @@ body {
     font-size: 13px;
     font-weight: 600;
     color: var(--tg-theme-link-color);
+    opacity: 0.9;
     margin: 0;
-    flex-shrink: 0; /* Предотвращает сжатие цены */
+    flex-shrink: 0;
 }
 
 .buy-button {
