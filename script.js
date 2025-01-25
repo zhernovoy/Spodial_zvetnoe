@@ -2,14 +2,22 @@
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-// Правильно определяем цвета темы
-document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
-document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
-document.documentElement.style.setProperty('--tg-theme-hint-color', tg.secondaryBackgroundColor);
-document.documentElement.style.setProperty('--tg-theme-link-color', tg.linkColor || '#2481cc');
-document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor || '#2481cc');
-document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor || '#ffffff');
-document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor);
+// Функция для обновления цветов темы
+const updateThemeColors = () => {
+    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.backgroundColor);
+    document.documentElement.style.setProperty('--tg-theme-text-color', tg.textColor);
+    document.documentElement.style.setProperty('--tg-theme-hint-color', tg.secondaryBackgroundColor);
+    document.documentElement.style.setProperty('--tg-theme-link-color', tg.linkColor || '#2481cc');
+    document.documentElement.style.setProperty('--tg-theme-button-color', tg.buttonColor || '#2481cc');
+    document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.buttonTextColor || '#ffffff');
+    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', tg.secondaryBackgroundColor);
+};
+
+// Инициализация цветов
+updateThemeColors();
+
+// Слушаем изменения темы
+Telegram.WebApp.onEvent('themeChanged', updateThemeColors);
 
 // Add config directly
 const config = {
