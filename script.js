@@ -144,6 +144,7 @@ class ProductCatalog {
                     const product = {
                         id: offer.getAttribute('id'),
                         name: this.getElementText(offer, 'name') || 'Картина по номерам',
+                        model: this.getElementText(offer, 'model') || '',
                         price: parseFloat(this.getElementText(offer, 'price')),
                         category: this.getElementText(offer, 'category') || 'Разное',
                         description: this.getElementText(offer, 'description'),
@@ -353,7 +354,7 @@ class SimpleChat {
                     card.innerHTML = `
                         ${product.picture ? `<img src="${product.picture}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/200'">` : ''}
                         <div class="product-card-content">
-                            <h4>${product.model || product.name.replace('Картина по номерам ', '')}</h4>
+                            <h4>${product.model || product.name.replace(/Картина по номерам\s*/, '')}</h4>
                             <p class="price">${formatPrice(product.price)}</p>
                             <button class="buy-button">Купить</button>
                         </div>
