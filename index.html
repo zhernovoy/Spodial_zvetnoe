@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spodial — enterprise-решение для Telegram</title>
+    <link rel="stylesheet" href="./styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <a href="/" class="logo">
+                    <img src="assets/logo.svg" alt="Spodial">
+                </a>
+                <div class="nav-links">
+                    <a href="#telegram">Telegram</a>
+                    <a href="#ecom">Ecom</a>
+                    <a href="#screen">Экраны</a>
+                    <a href="#chat">Чат</a>
+                </div>
+                <a href="#start" class="btn-primary">Начать</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Spodial — enterprise-решение для организации продаж в Telegram</h1>
+                <p class="hero-subtitle">
+                    Mini Apps — это не просто новый тренд, а будущее мобильного маркетинга. 
+                    Создавайте мини-приложения для автоматизации с пользовательским UX, как они уже есть... в мессенджерах.
+                </p>
+                <div class="hero-buttons">
+                    <button class="btn-primary">Начать сейчас</button>
+                    <button class="btn-secondary">Написать</button>
+                </div>
+            </div>
+            <div class="hero-image">
+                <div class="phone-container">
+                    <div class="stat-bubble stat-bubble-left">
+                        <div class="bubble-icon">📈</div>
+                        <div class="bubble-content">
+                            <strong>27k+</strong>
+                            <span>активных пользователей</span>
+                        </div>
+                    </div>
+                    <div class="stat-bubble stat-bubble-right">
+                        <div class="bubble-icon">💰</div>
+                        <div class="bubble-content">
+                            <strong>16.3%</strong>
+                            <span>конверсия в покупку</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chat Section -->
+    <section class="chat-section" id="chat">
+        <div class="container">
+            <div class="chat-container">
+                <div id="chatMessages">
+                    <div class="message assistant">
+                        Здравствуйте! Я помогу вам выбрать картину по номерам. Что вас интересует?
+                    </div>
+                </div>
+                <div class="chat-controls">
+                    <input type="text" id="userInput" placeholder="Введите сообщение...">
+                    <button id="sendMessage">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="./script.js"></script>
+</html> 
