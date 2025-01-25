@@ -350,9 +350,10 @@ class SimpleChat {
                     // Update click handler to handle both card and button clicks
                     const buyButton = card.querySelector('.buy-button');
                     buyButton.addEventListener('click', (e) => {
-                        e.stopPropagation(); // Prevent card click
-                        if (window.Telegram?.WebApp?.openTelegramLink) {
-                            window.Telegram.WebApp.openTelegramLink(product.url);
+                        e.stopPropagation();
+                        // Используем Telegram WebApp для открытия ссылки
+                        if (window.Telegram?.WebApp) {
+                            window.Telegram.WebApp.openLink(product.url);
                         } else {
                             window.open(product.url, '_blank');
                         }
