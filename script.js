@@ -11,11 +11,12 @@ const config = {
     1. Помогать клиентам выбрать подходящие картины по номерам
     2. Отвечать на вопросы о сложности, размерах и материалах
     3. Давать рекомендации с учетом опыта и предпочтений клиента
+    4. Если клиент указал свой @instagram - спросить об интересах и хобби
     
     Правила общения:
     1. Всегда будьте вежливы и профессиональны
     2. Давайте конкретные рекомендации на основе каталога
-    3. Если информации недостаточно, задавайте уточняющие вопросы
+    3. Если указан Instagram - отметьте это и используйте для персонализации
     4. Используйте формальный стиль общения
     
     При рекомендации товаров учитывайте:
@@ -23,10 +24,11 @@ const config = {
     - Тематику (природа/города/животные/etc)
     - Ценовой диапазон
     - Размер картины
+    - Интересы из Instagram (если указаны)
     
     Важно: 
     1. Давайте только краткие ответы (1-2 предложения)
-    2. Не включайте ссылки и технические детали
+    2. Если указан Instagram - поблагодарите и используйте эту информацию
     3. Просто опишите, почему эти картины подойдут
     4. Пусть карточки товаров говорят сами за себя`
 };
@@ -193,20 +195,26 @@ class ProductCatalog {
         }
     }
 
+    detectSocialMedia(context) {
+        const instagram = context.match(/instagram\.com\/[\w\d._]+|@[\w\d._]+/);
+        return {
+            instagram: instagram ? instagram[0] : null
+        };
+    }
+
     searchProducts(query, context = []) {
-        // Анализируем весь контекст диалога
         const fullContext = context.filter(msg => msg.role === 'user')
             .map(msg => msg.content)
             .join(' ')
             .toLowerCase();
 
-        // Извлекаем ключевые параметры из контекста
         const params = {
             experience: this.detectExperience(fullContext),
             age: this.detectAge(fullContext),
             purpose: this.detectPurpose(fullContext),
             theme: this.detectTheme(fullContext),
-            priceRange: this.detectPriceRange(fullContext)
+            priceRange: this.detectPriceRange(fullContext),
+            social: this.detectSocialMedia(fullContext)
         };
 
         const searchTerms = query.toLowerCase().split(' ');
@@ -260,6 +268,14 @@ class ProductCatalog {
                 if (params.priceRange) {
                     if (product.price >= params.priceRange.min && 
                         product.price <= params.priceRange.max) {
+                        score += 3;
+                    }
+                }
+
+                // Бонус за соответствие интересам из соцсетей
+                if (params.social.instagram) {
+                    if (product.tags.some(tag => 
+                        ['современный', 'модный', 'популярный', 'тренд'].includes(tag))) {
                         score += 3;
                     }
                 }
@@ -469,3 +485,7 @@ class SimpleChat {
 document.addEventListener('DOMContentLoaded', () => {
     const chat = new SimpleChat();
 });
+
+// Обновляем placeholder в index.html
+const userInput = document.getElementById('userInput');
+userInput.placeholder = 'Опишите желаемую картину, укажите ваш @instagram для персональных рекомендаций...';
