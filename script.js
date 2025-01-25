@@ -193,27 +193,112 @@ class ProductCatalog {
         }
     }
 
-    searchProducts(query) {
-        const searchTerms = query.toLowerCase().split(' ');
-        const results = this.products.map(product => {
-            const searchText = `${product.name} ${product.description} ${product.category} ${product.tags.join(' ')}`.toLowerCase();
-            const matchScore = searchTerms.reduce((score, term) => {
-                if (searchText.includes(term)) {
-                    score += 1;
-                    // Бонусные очки за совпадения
-                    if (product.name.toLowerCase().includes(term)) score += 2;
-                    if (product.category.toLowerCase().includes(term)) score += 1;
-                    if (product.tags.some(tag => tag.toLowerCase().includes(term))) score += 2;
-                }
-                return score;
-            }, 0);
-            return { product, score: matchScore };
-        });
+    searchProducts(query, context = []) {
+        // Анализируем весь контекст диалога
+        const fullContext = context.filter(msg => msg.role === 'user')
+            .map(msg => msg.content)
+            .join(' ')
+            .toLowerCase();
 
-        return results
+        // Извлекаем ключевые параметры из контекста
+        const params = {
+            experience: this.detectExperience(fullContext),
+            age: this.detectAge(fullContext),
+            purpose: this.detectPurpose(fullContext),
+            theme: this.detectTheme(fullContext),
+            priceRange: this.detectPriceRange(fullContext)
+        };
+
+        const searchTerms = query.toLowerCase().split(' ');
+        
+        return this.products
+            .map(product => {
+                let score = 0;
+                
+                // Базовое соответствие поисковым терминам
+                searchTerms.forEach(term => {
+                    const searchText = `${product.name} ${product.description} ${product.category} ${product.tags.join(' ')}`.toLowerCase();
+                    if (searchText.includes(term)) score += 1;
+                });
+
+                // Соответствие тегам по уровню сложности
+                if (params.experience) {
+                    if (params.experience === 'beginner' && product.tags.some(tag => 
+                        ['простой', 'для начинающих', 'легкий'].includes(tag))) {
+                        score += 5;
+                    }
+                    if (params.experience === 'advanced' && product.tags.some(tag => 
+                        ['сложный', 'детальный', 'для опытных'].includes(tag))) {
+                        score += 5;
+                    }
+                }
+
+                // Соответствие возрасту
+                if (params.age) {
+                    if (params.age < 12 && product.tags.some(tag => 
+                        ['детский', 'для детей', 'простой'].includes(tag))) {
+                        score += 5;
+                    }
+                    if (params.age >= 12 && product.tags.some(tag => 
+                        ['взрослый', 'сложный'].includes(tag))) {
+                        score += 3;
+                    }
+                }
+
+                // Соответствие цели (подарок/для себя)
+                if (params.purpose === 'gift' && product.tags.some(tag => 
+                    ['подарок', 'праздничный', 'популярный'].includes(tag))) {
+                    score += 4;
+                }
+
+                // Соответствие тематике
+                if (params.theme && product.tags.some(tag => tag.includes(params.theme))) {
+                    score += 5;
+                }
+
+                // Соответствие ценовому диапазону
+                if (params.priceRange) {
+                    if (product.price >= params.priceRange.min && 
+                        product.price <= params.priceRange.max) {
+                        score += 3;
+                    }
+                }
+
+                return { product, score };
+            })
             .filter(result => result.score > 0)
             .sort((a, b) => b.score - a.score)
             .map(result => result.product);
+    }
+
+    // Вспомогательные методы для анализа контекста
+    detectExperience(context) {
+        if (context.includes('начинающ') || context.includes('первый раз')) return 'beginner';
+        if (context.includes('опыт') || context.includes('сложн')) return 'advanced';
+        return null;
+    }
+
+    detectAge(context) {
+        const ageMatch = context.match(/\d+ (?:лет|год)/);
+        return ageMatch ? parseInt(ageMatch[0]) : null;
+    }
+
+    detectPurpose(context) {
+        if (context.includes('подарок') || context.includes('подарить')) return 'gift';
+        return 'personal';
+    }
+
+    detectTheme(context) {
+        const themes = ['природа', 'город', 'животные', 'цветы', 'пейзаж', 'море'];
+        return themes.find(theme => context.includes(theme)) || null;
+    }
+
+    detectPriceRange(context) {
+        const priceMatch = context.match(/до (\d+)/);
+        if (priceMatch) {
+            return { min: 0, max: parseInt(priceMatch[1]) };
+        }
+        return null;
     }
 
     getProductsByCategory(category) {
@@ -285,33 +370,29 @@ class SimpleChat {
         const message = this.input.value.trim();
         if (!message) return;
 
-        // Add user message
         this.addMessage(message, true);
         this.input.value = '';
         
         try {
             this.button.disabled = true;
-            
-            // Add message to context
             this.context.push({ role: 'user', content: message });
             
-            // Get relevant products
-            const relevantProducts = this.catalog.searchProducts(message);
-            const productContext = this.catalog.generateProductPrompt(relevantProducts.slice(0, 5));
+            // Передаем весь контекст диалога в поиск
+            const relevantProducts = this.catalog.searchProducts(message, this.context);
+            const productContext = this.catalog.generateProductPrompt(relevantProducts.slice(0, 4));
             
-            // Add product context to the message
             this.context.push({
                 role: 'system',
-                content: `Актуальные товары для запроса:\n${productContext}`
+                content: `Актуальные товары для запроса:\n${productContext}\n
+                Учитывайте контекст диалога и особенности запроса пользователя.
+                Если это подарок - упомяните это в ответе.
+                Если указан возраст - учтите его при рекомендации.
+                Если есть опыт - подчеркните сложность картин.`
             });
 
-            // Get AI response
             const response = await this.aiService.generateResponse(this.context);
-            
-            // Add AI response to context and display it
             this.context.push({ role: 'assistant', content: response });
             this.addMessage(response, false);
-
         } catch (error) {
             console.error('Chat error:', error);
             this.addMessage('Извините, произошла ошибка. Попробуйте позже.', false);
@@ -343,7 +424,7 @@ class SimpleChat {
             div.appendChild(textDiv);
 
             // Add product cards if there are relevant products
-            const relevantProducts = this.catalog.searchProducts(this.context[this.context.length - 2]?.content || '');
+            const relevantProducts = this.catalog.searchProducts(this.context[this.context.length - 2]?.content || '', this.context);
             if (relevantProducts.length > 0) {
                 const productsDiv = document.createElement('div');
                 productsDiv.className = 'product-cards';
