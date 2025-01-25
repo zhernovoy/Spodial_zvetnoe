@@ -5,32 +5,15 @@ const config = {
     MODEL_NAME: 'deepseek-chat',
     MAX_TOKENS: 1000,
     TEMPERATURE: 0.7,
-    SYSTEM_PROMPT: `Вы — профессиональный консультант по картинам по номерам в магазине Zvetnoe.ru.
-    
-    Ваша задача:
-    1. Помогать клиентам выбрать подходящие картины по номерам
-    2. Отвечать на вопросы о сложности, размерах и материалах
-    3. Давать рекомендации с учетом опыта и предпочтений клиента
-    4. Если клиент указал свой @instagram - спросить об интересах и хобби
-    
-    Правила общения:
-    1. Всегда будьте вежливы и профессиональны
-    2. Давайте конкретные рекомендации на основе каталога
-    3. Если указан Instagram - отметьте это и используйте для персонализации
-    4. Используйте формальный стиль общения
-    
-    При рекомендации товаров учитывайте:
-    - Уровень сложности (начинающий/средний/опытный)
-    - Тематику (природа/города/животные/etc)
-    - Ценовой диапазон
-    - Размер картины
-    - Интересы из Instagram (если указаны)
+    SYSTEM_PROMPT: `Вы — профессиональный консультант по картинам по номерам.
     
     Важно: 
-    1. Давайте только краткие ответы (1-2 предложения)
-    2. Если указан Instagram - поблагодарите и используйте эту информацию
-    3. Просто опишите, почему эти картины подойдут
-    4. Пусть карточки товаров говорят сами за себя`
+    1. Давайте краткие рекомендации
+    2. После описания каждой картины добавляйте её артикул в скобках (ID: 12345)
+    3. После рекомендаций спрашивайте мнение клиента
+    
+    Пример ответа:
+    Для вас подойдет картина "Закат в Париже" - романтичный городской пейзаж (ID: 12345).`
 };
 
 // Add utility functions directly
@@ -189,163 +172,37 @@ class ProductCatalog {
             if (this.products.length === 0) {
                 throw new Error('No valid products loaded from XML');
             }
+
         } catch (error) {
             console.error('Error loading catalog:', error);
             throw error;
         }
     }
 
-    detectSocialMedia(context) {
-        const instagram = context.match(/instagram\.com\/[\w\d._]+|@[\w\d._]+/);
-        return {
-            instagram: instagram ? instagram[0] : null
-        };
-    }
-
-    searchProducts(query, context = []) {
-        const fullContext = context.filter(msg => msg.role === 'user')
-            .map(msg => msg.content)
-            .join(' ')
-            .toLowerCase();
-
-        const params = {
-            experience: this.detectExperience(fullContext),
-            age: this.detectAge(fullContext),
-            purpose: this.detectPurpose(fullContext),
-            theme: this.detectTheme(fullContext),
-            priceRange: this.detectPriceRange(fullContext),
-            social: this.detectSocialMedia(fullContext)
-        };
-
-        const searchTerms = query.toLowerCase().split(' ');
+    searchProducts(ids) {
+        console.log('Searching for IDs:', ids);
         
-        return this.products
-            .map(product => {
-                let score = 0;
-                
-                // Базовое соответствие поисковым терминам
-                searchTerms.forEach(term => {
-                    const searchText = `${product.name} ${product.description} ${product.category} ${product.tags.join(' ')}`.toLowerCase();
-                    if (searchText.includes(term)) score += 1;
-                });
-
-                // Соответствие тегам по уровню сложности
-                if (params.experience) {
-                    if (params.experience === 'beginner' && product.tags.some(tag => 
-                        ['простой', 'для начинающих', 'легкий'].includes(tag))) {
-                        score += 5;
-                    }
-                    if (params.experience === 'advanced' && product.tags.some(tag => 
-                        ['сложный', 'детальный', 'для опытных'].includes(tag))) {
-                        score += 5;
-                    }
-                }
-
-                // Соответствие возрасту
-                if (params.age) {
-                    if (params.age < 12 && product.tags.some(tag => 
-                        ['детский', 'для детей', 'простой'].includes(tag))) {
-                        score += 5;
-                    }
-                    if (params.age >= 12 && product.tags.some(tag => 
-                        ['взрослый', 'сложный'].includes(tag))) {
-                        score += 3;
-                    }
-                }
-
-                // Соответствие цели (подарок/для себя)
-                if (params.purpose === 'gift' && product.tags.some(tag => 
-                    ['подарок', 'праздничный', 'популярный'].includes(tag))) {
-                    score += 4;
-                }
-
-                // Соответствие тематике
-                if (params.theme && product.tags.some(tag => tag.includes(params.theme))) {
-                    score += 5;
-                }
-
-                // Соответствие ценовому диапазону
-                if (params.priceRange) {
-                    if (product.price >= params.priceRange.min && 
-                        product.price <= params.priceRange.max) {
-                        score += 3;
-                    }
-                }
-
-                // Бонус за соответствие интересам из соцсетей
-                if (params.social.instagram) {
-                    if (product.tags.some(tag => 
-                        ['современный', 'модный', 'популярный', 'тренд'].includes(tag))) {
-                        score += 3;
-                    }
-                }
-
-                return { product, score };
-            })
-            .filter(result => result.score > 0)
-            .sort((a, b) => b.score - a.score)
-            .map(result => result.product);
-    }
-
-    // Вспомогательные методы для анализа контекста
-    detectExperience(context) {
-        if (context.includes('начинающ') || context.includes('первый раз')) return 'beginner';
-        if (context.includes('опыт') || context.includes('сложн')) return 'advanced';
-        return null;
-    }
-
-    detectAge(context) {
-        const ageMatch = context.match(/\d+ (?:лет|год)/);
-        return ageMatch ? parseInt(ageMatch[0]) : null;
-    }
-
-    detectPurpose(context) {
-        if (context.includes('подарок') || context.includes('подарить')) return 'gift';
-        return 'personal';
-    }
-
-    detectTheme(context) {
-        const themes = ['природа', 'город', 'животные', 'цветы', 'пейзаж', 'море'];
-        return themes.find(theme => context.includes(theme)) || null;
-    }
-
-    detectPriceRange(context) {
-        const priceMatch = context.match(/до (\d+)/);
-        if (priceMatch) {
-            return { min: 0, max: parseInt(priceMatch[1]) };
-        }
-        return null;
-    }
-
-    getProductsByCategory(category) {
-        return this.products.filter(product => product.category === category);
-    }
-
-    getProductsByPriceRange(min, max) {
-        return this.products.filter(product => 
-            product.price >= min && product.price <= max
+        // Ищем товары по ID
+        const found = this.products.filter(product => 
+            ids.includes(product.id)
         );
+        
+        console.log('Found products:', found.length);
+        return found;
     }
 
     generateProductPrompt(products) {
         if (!products.length) return 'Нет подходящих товаров в каталоге.';
 
-        return `Доступные товары:\n\n${products.map(p => `
+        return `Доступные товары:\n\n${products.map(p => {
+            return `
+ID: ${p.id}
 Название: ${p.name}
 Цена: ${formatPrice(p.price)}
 Категория: ${p.category}
 Теги: ${p.tags.join(', ')}
-Описание: ${p.description}
-URL: ${p.url}
----`).join('\n')}`;
-    }
-
-    categorizeByPrice(products) {
-        return {
-            budget: products.filter(p => p.price < 1000),
-            medium: products.filter(p => p.price >= 1000 && p.price < 2000),
-            premium: products.filter(p => p.price >= 2000)
-        };
+---`;
+        }).join('\n')}`;
     }
 }
 
@@ -355,29 +212,40 @@ class SimpleChat {
         this.input = document.getElementById('userInput');
         this.button = document.getElementById('sendMessage');
         
-        // Initialize AI service and catalog
+        // Initialize services
         this.aiService = new AIService();
         this.catalog = new ProductCatalog();
         this.context = [];
         
+        // Создаем блок рекомендаций
+        this.recommendationsDiv = document.createElement('div');
+        this.recommendationsDiv.className = 'recommendations';
+        this.recommendationsDiv.innerHTML = '<h3>Наши рекомендации</h3>';
+        this.messages.parentNode.insertBefore(this.recommendationsDiv, this.messages);
+        
         // Bind event listeners
         this.button.addEventListener('click', () => this.sendMessage());
         this.input.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendMessage();
-            }
+            if (e.key === 'Enter') this.sendMessage();
         });
 
-        // Load catalog
-        this.initializeCatalog();
+        // Инициализируем в правильном порядке
+        this.initialize();
     }
 
-    async initializeCatalog() {
+    async initialize() {
         try {
+            // Сначала загружаем каталог
             await this.catalog.loadFromXML('./yml_spodial.xml');
             console.log('Catalog loaded successfully');
+            
+            // После загрузки каталога показываем рекомендации
+            this.updateRecommendations();
+            
+            // И запускаем автообновление
+            setInterval(() => this.updateRecommendations(), 5 * 60 * 1000);
         } catch (error) {
-            console.error('Failed to load catalog:', error);
+            console.error('Failed to initialize:', error);
             this.addMessage('Извините, не удалось загрузить каталог товаров.', false);
         }
     }
@@ -393,23 +261,33 @@ class SimpleChat {
             this.button.disabled = true;
             this.context.push({ role: 'user', content: message });
             
-            // Сохраняем найденные продукты в переменную класса
-            this.lastRelevantProducts = this.catalog.searchProducts(message, this.context).slice(0, 4);
-            const productContext = this.catalog.generateProductPrompt(this.lastRelevantProducts);
+            // Сначала найдем подходящие товары для контекста
+            const relevantProducts = this.catalog.products.slice(0, 5); // Временно берем первые 5 товаров
+            const productContext = this.catalog.generateProductPrompt(relevantProducts);
             
+            // Добавляем контекст с товарами для AI
             this.context.push({
                 role: 'system',
-                content: `Актуальные товары для запроса:\n${productContext}\n
-                Учитывайте контекст диалога и особенности запроса пользователя.
-                Если это подарок - упомяните это в ответе.
-                Если указан возраст - учтите его при рекомендации.
-                Если есть опыт - подчеркните сложность картин.
-                Важно: Рекомендуйте только из списка предоставленных товаров.`
+                content: `${productContext}\nИспользуйте ID из списка выше при рекомендации товаров.`
             });
 
             const response = await this.aiService.generateResponse(this.context);
-            this.context.push({ role: 'assistant', content: response });
-            this.addMessage(response, false);
+            console.log('Original AI response:', response);
+            
+            // Ищем ID товаров в ответе (формат: ID: 12345)
+            const ids = response.match(/ID:\s*(\d+)/g)?.map(match => 
+                match.replace('ID:', '').trim()
+            ) || [];
+            console.log('Found IDs:', ids);
+            
+            // Находим товары по ID
+            this.lastRelevantProducts = this.catalog.searchProducts(ids);
+            
+            // Удаляем ID из текста ответа
+            const cleanResponse = response.replace(/\(ID:\s*\d+\)/g, '');
+            
+            this.context.push({ role: 'assistant', content: cleanResponse });
+            this.addMessage(cleanResponse, false);
         } catch (error) {
             console.error('Chat error:', error);
             this.addMessage('Извините, произошла ошибка. Попробуйте позже.', false);
@@ -428,39 +306,12 @@ class SimpleChat {
             textDiv.innerHTML = this.formatText(text);
             div.appendChild(textDiv);
 
-            // Используем сохраненные продукты
             if (this.lastRelevantProducts?.length > 0) {
                 const productsDiv = document.createElement('div');
                 productsDiv.className = 'product-cards';
-                
-                this.lastRelevantProducts.forEach(product => {
-                    const card = document.createElement('div');
-                    card.className = 'product-card';
-                    card.innerHTML = `
-                        ${product.picture ? `<img src="${product.picture}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/200'">` : ''}
-                        <div class="product-card-content">
-                            <h4>${product.model || product.name.replace(/Картина по номерам\s*/, '')}</h4>
-                            <p class="price">${formatPrice(product.price)}</p>
-                            <button class="buy-button">Купить</button>
-                        </div>
-                    `;
-                    
-                    const buyButton = card.querySelector('.buy-button');
-                    buyButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        window.open(product.url, '_blank');
-                    });
-                    
-                    productsDiv.appendChild(card);
-                });
-                
+                this.addProductCards(productsDiv, this.lastRelevantProducts);
                 div.appendChild(productsDiv);
             }
-
-            const questionDiv = document.createElement('div');
-            questionDiv.className = 'message-text';
-            questionDiv.innerHTML = '<br>Какой вариант вам больше нравится?';
-            div.appendChild(questionDiv);
         } else {
             div.textContent = text;
         }
@@ -469,15 +320,94 @@ class SimpleChat {
         this.messages.scrollTop = this.messages.scrollHeight;
     }
 
+    // Вспомогательный метод для создания карточек
+    addProductCards(container, products) {
+        products.forEach(product => {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+            card.innerHTML = `
+                ${product.picture ? `<img src="${product.picture}" alt="${product.name}" onerror="this.src='https://via.placeholder.com/200'">` : ''}
+                <div class="product-card-content">
+                    <h4>${product.model || product.name.replace(/Картина по номерам\s*/, '')}</h4>
+                    <p class="price">${formatPrice(product.price)}</p>
+                    <button class="buy-button">Купить</button>
+                </div>
+            `;
+            
+            const buyButton = card.querySelector('.buy-button');
+            buyButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.open(product.url, '_blank');
+            });
+            
+            container.appendChild(card);
+        });
+    }
+
     // Добавляем вспомогательный метод для форматирования текста
     formatText(text) {
         return text
             .replace(/###\s(.*?)(?=\n|$)/g, '<h3>$1</h3>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-            .replace(/- (.*?)(?=\n|$)/g, '<li>$1</li>')
-            .replace(/(<li>.*?<\/li>)\n*/g, text.includes('<li>') ? '<ul>$1</ul>' : '$1')
             .replace(/\n/g, '<br>');
+    }
+
+    updateRecommendations() {
+        console.log('Updating recommendations, products available:', this.catalog.products.length);
+        
+        // Получаем 6 случайных картин
+        const recommendations = this.getRandomProducts(6);
+        console.log('Selected recommendations:', recommendations.map(p => p.name));
+        
+        // Создаем обертку для слайдера
+        const wrapper = document.createElement('div');
+        wrapper.className = 'recommendations-wrapper';
+        
+        // Создаем контейнер для карточек
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'product-cards recommendations-cards';
+        
+        // Добавляем карточки
+        this.addProductCards(cardsContainer, recommendations);
+        
+        // Создаем индикаторы
+        const indicators = document.createElement('div');
+        indicators.className = 'scroll-indicators';
+        
+        // Добавляем точки (3 точки для 6 картин)
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'scroll-dot' + (i === 0 ? ' active' : '');
+            indicators.appendChild(dot);
+        }
+        
+        // Добавляем слушатель прокрутки
+        cardsContainer.addEventListener('scroll', () => {
+            const scrollPosition = cardsContainer.scrollLeft;
+            const maxScroll = cardsContainer.scrollWidth - cardsContainer.clientWidth;
+            const progress = scrollPosition / maxScroll;
+            
+            // Обновляем активную точку
+            const dots = indicators.children;
+            const activeDotIndex = Math.round(progress * 2);
+            
+            Array.from(dots).forEach((dot, index) => {
+                dot.classList.toggle('active', index === activeDotIndex);
+            });
+        });
+        
+        // Собираем все вместе
+        wrapper.appendChild(cardsContainer);
+        wrapper.appendChild(indicators);
+        
+        // Обновляем содержимое блока рекомендаций
+        this.recommendationsDiv.innerHTML = '<h3>Наши рекомендации</h3>';
+        this.recommendationsDiv.appendChild(wrapper);
+    }
+
+    getRandomProducts(count) {
+        const shuffled = [...this.catalog.products].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
     }
 }
 
@@ -486,6 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const chat = new SimpleChat();
 });
 
-// Обновляем placeholder в index.html
+// Обновляем placeholder
 const userInput = document.getElementById('userInput');
-userInput.placeholder = 'Опишите желаемую картину, укажите ваш @instagram для персональных рекомендаций...';
+userInput.placeholder = 'Опишите желаемую картину...';
